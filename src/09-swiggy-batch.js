@@ -89,24 +89,108 @@
  */
 export function prepareOrder(item, prepTime) {
   // Your code here
+  return new Promise((resolve, reject) => {
+    if (!item) {
+      reject(new Error("Item name required!"));
+      return;
+    }
+
+    if (typeof prepTime !== "number" || prepTime <= 0) {
+      reject(new Error("Invalid prep time!"));
+      return;
+    }
+
+    setTimeout(() => {
+      resolve({
+        item,
+        ready: true,
+        prepTime,
+      });
+    }, prepTime);
+  });
 }
 
 export function prepareBatch(items) {
   // Your code here
+  if (!Array.isArray(items) || items.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  const promises = items.map((item) =>
+    prepareOrder(item.name, item.prepTime)
+  );
+
+  return Promise.all(promises);
 }
 
 export function getFirstReady(items) {
   // Your code here
+  if (!Array.isArray(items) || items.length === 0) {
+    return Promise.reject(new Error("No items to prepare!"));
+  }
+
+  const promises = items.map((item) =>
+    prepareOrder(item.name, item.prepTime)
+  );
+
+  return Promise.race(promises);
 }
 
 export function prepareSafeBatch(items) {
   // Your code here
+  if (!Array.isArray(items) || items.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  const promises = items.map((item) =>
+    prepareOrder(item.name, item.prepTime)
+  );
+
+  return Promise.allSettled(promises).then((results) =>
+    results.map((res) => {
+      if (res.status === "fulfilled") {
+        return res;
+      } else {
+        return {
+          status: "rejected",
+          reason: res.reason.message,
+        };
+      }
+    })
+  );
 }
 
 export function deliverWithTimeout(orderPromise, timeoutMs) {
   // Your code here
+  if (typeof timeoutMs !== "number" || timeoutMs <= 0) {
+    return Promise.reject(new Error("Invalid timeout!"));
+  }
+
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error("Delivery timeout!"));
+    }, timeoutMs);
+  });
+
+  return Promise.race([orderPromise, timeoutPromise]);
 }
 
 export function batchWithRetry(items, maxRetries) {
   // Your code here
+  if (maxRetries < 0) {
+    throw new Error("Invalid retries!");
+  }
+
+  let attempts = 0;
+
+  while (attempts <= maxRetries) {
+    try {
+      return  prepareBatch(items);
+    } catch (err) {
+      if (attempts === maxRetries) {
+        throw err; // last error
+      }
+      attempts++;
+    }
+  }
 }

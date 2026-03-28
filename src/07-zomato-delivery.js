@@ -84,16 +84,63 @@
  *   // => [ { status: "fulfilled", value: { ...delivered order } },
  *   //      { status: "fulfilled", value: { error: "Invalid order details!", status: "failed" } } ]
  */
+const riders = ["Rahul", "Priya", "Amit", "Neha", "Vikram"];
 export function placeOrder(restaurant, items) {
   // Your code here
+  return new Promise((resolve, reject) => {
+    if (
+      typeof restaurant !== "string" ||
+      restaurant.trim() === "" ||
+      !Array.isArray(items) ||
+      items.length === 0
+    ) {
+      return reject(new Error("Invalid order details!"));
+    }
+
+    setTimeout(() => {
+      resolve({
+        orderId: Math.floor(Math.random() * 10000),
+        restaurant,
+        items,
+        status: "placed",
+        timestamp: new Date().toISOString(),
+      });
+    }, 50);
+  });
 }
 
 export function confirmOrder(order) {
   // Your code here
+  return new Promise((resolve, reject) => {
+    if (!order || !order.orderId || order.status !== "placed") {
+      return reject(new Error("Order cannot be confirmed!"));
+    }
+
+    resolve({
+      ...order,
+      status: "confirmed",
+      estimatedTime: 30,
+    });
+  });
 }
 
 export function assignRider(order) {
   // Your code here
+  return new Promise((resolve, reject) => {
+    // strict validation (VERY important for tests)
+    if (!order || order.status !== "confirmed") {
+      return reject(new Error("Order not confirmed yet!"));
+    }
+
+    const riderPool = ["Rahul", "Priya", "Amit", "Neha", "Vikram"];
+    const rider = riderPool[Math.floor(Math.random() * riderPool.length)];
+
+    return resolve({
+      ...order,
+      rider: rider,
+      status: "assigned",
+    });
+  });
 }
 
 export function deliverOrder(order) {

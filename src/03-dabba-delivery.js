@@ -77,29 +77,123 @@
 export class DabbaService {
   constructor(serviceName, area) {
     // Your code here
+    this.serviceName = serviceName;
+    this.area = area;
+    this.customers = [];
+    this._nextId = 1;
   }
 
   addCustomer(name, address, mealPreference) {
     // Your code here
+    const validPrefs = ["veg", "nonveg", "jain"];
+
+    if (!validPrefs.includes(mealPreference)) return null;
+
+    // check duplicate name
+    for (let c of this.customers) {
+      if (c.name === name) return null;
+    }
+
+    const customer = {
+      id: this._nextId,
+      name,
+      address,
+      mealPreference,
+      active: true,
+      delivered: false,
+    };
+
+    this.customers.push(customer);
+    this._nextId++;
+
+    return customer;
   }
 
   removeCustomer(name) {
     // Your code here
+    for (let c of this.customers) {
+      if (c.name === name) {
+        if (!c.active) return false;
+
+        c.active = false;
+        return true;
+      }
+    }
+    return false;
   }
 
   createDeliveryBatch() {
     // Your code here
+    const batch = [];
+
+    for (let c of this.customers) {
+      if (c.active) {
+        c.delivered = false;
+
+        batch.push({
+          customerId: c.id,
+          name: c.name,
+          address: c.address,
+          mealPreference: c.mealPreference,
+          batchTime: new Date().toISOString(),
+        });
+      }
+    }
+
+    return batch;
   }
 
   markDelivered(customerId) {
     // Your code here
+    for (let c of this.customers) {
+      if (c.id === customerId && c.active) {
+        c.delivered = true;
+        return true;
+      }
+    }
+    return false;
   }
 
   getDailyReport() {
     // Your code here
+    let total = 0;
+    let delivered = 0;
+    let pending = 0;
+
+    const mealBreakdown = {
+      veg: 0,
+      nonveg: 0,
+      jain: 0,
+    };
+
+    for (let c of this.customers) {
+      if (c.active) {
+        total++;
+
+        // delivered / pending
+        if (c.delivered) delivered++;
+        else pending++;
+
+        // meal count
+        mealBreakdown[c.mealPreference]++;
+      }
+    }
+
+    return {
+      totalCustomers: total,
+      delivered,
+      pending,
+      mealBreakdown,
+    };
   }
 
   getCustomer(name) {
     // Your code here
+    for (let c of this.customers) {
+      if (c.name === name) {
+        return c;
+      }
+    }
+    return null;
   }
 }
